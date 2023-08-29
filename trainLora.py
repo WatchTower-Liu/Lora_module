@@ -86,7 +86,7 @@ class train_lora():
                 optim.step()
                 eloss += loss.detach().cpu().numpy()
             eloss /= len(self.allTimestep)
-            time.sleep(3)
+
             print("epoch:{} loss:{}".format(e, eloss))
 
     def addNoise(self, latent:torch.Tensor, noise: torch.Tensor, timestep:torch.Tensor):
@@ -291,19 +291,19 @@ def main():
     # exit()
 
 
-    trainer.train(40, "./data/2_mecha")    # 训练
-    trainer.loraIn.save_lora("./save/lora_30.pt")
+    trainer.train(40, "./data/your_data")    # 训练
+    trainer.loraIn.save_lora("./save/lora.pt")
     
     new_trainer = train_lora(model_name, True,         
                              target_module=target_module,
                              is_diffusers=False,
                              only_local_files=False)               # 在新的模型上注入，测试保存的模型是否可用
-    new_trainer.loraIn.load_lora("./save/lora_30.pt")
+    new_trainer.loraIn.load_lora("./save/lora.pt")
 
     # img = cv.imread("./data/xiang/5d839a7bf712838d3ec07112d699037f.jpeg")
     # img = cv.resize(img, (768, 768))
 
-    generate_image(4, new_trainer, "mecha, mecha_musume, cyborg, letterboxed, pillarboxed, gun, weapon, 1girl, rifle, ass, assault_rifle, black_border, bullpup, mechanical_tail, thigh_holster, long_hair, android, solo, shiny, ruins, looking_at_viewer, bodysuit, holding_gun, handgun, city, blue_hair, cyberpunk, shiny_clothes, outdoors, sunset, finger_on_trigger, building, cityscape, holster, medium_breasts, orange_eyes, m4_carbine, floating_hair, sky, pistol, cloud, submachine_gun")
+    generate_image(4, new_trainer, "prompt")
 
 
 if __name__ == "__main__":
