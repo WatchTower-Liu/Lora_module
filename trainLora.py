@@ -23,8 +23,10 @@ torch.cuda.is_available()
 class train_lora():
     DEFAULT_MODEL = "runwayml/stable-diffusion-v1-5"
     cache_dir = "F:/huggingface_model/"    # diffusers的本地缓存路径
-    def __init__(self, base_model_name:str,
-                 injectLora:bool, 
+    def __init__(self, 
+                 base_model_name:str,     
+                 injectLora:bool,         
+                 multiplier:float = 1.0,
                  is_diffusers:bool = True,
                  target_module:list = None, 
                  lr:float = 1e-4,
@@ -49,7 +51,7 @@ class train_lora():
 
         self.image_processor = VaeImageProcessor()
         if injectLora:
-            self.loraIn = loraModle(target_module, lora_dim, lora_alpha)
+            self.loraIn = loraModle(target_module, lora_dim, lora_alpha, multiplier)
             lora_unet = self.loraIn.inject(self.unet)
             self.unet = lora_unet
         
@@ -294,7 +296,8 @@ def main():
     trainer.train(40, "./data/your_data")    # 训练
     trainer.loraIn.save_lora("./save/lora.pt")
     
-    new_trainer = train_lora(model_name, True,         
+    new_trainer = train_lora(model_name, True,   
+                             multiplier = 0.8,      
                              target_module=target_module,
                              is_diffusers=False,
                              only_local_files=False)               # 在新的模型上注入，测试保存的模型是否可用

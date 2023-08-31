@@ -4,7 +4,7 @@ import re
 import math
 
 class loraConv(nn.Module):
-    def __init__(self, name, org_module, lora_dim, alpha, *args, **kwargs) -> None:
+    def __init__(self, name, org_module, lora_dim, alpha, multiplier, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.name = name
         input_channel = org_module.in_channels
@@ -13,6 +13,7 @@ class loraConv(nn.Module):
         padding = org_module.padding
         strid = org_module.stride
 
+        self.multiplier = multiplier
         self.scale = alpha / lora_dim
 
         self.org_forward = org_module.forward
@@ -31,15 +32,16 @@ class loraConv(nn.Module):
         org_x = self.org_forward(x)
         down_x = self.down_conv(x)
         up_x = self.up_conv(down_x)
-        return up_x * self.scale + org_x
+        return up_x * self.scale * self.multiplier + org_x
     
 class loraLinear(nn.Module):
-    def __init__(self, name, org_module, lora_dim, alpha, *args, **kwargs) -> None:
+    def __init__(self, name, org_module, lora_dim, alpha, multiplier, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.name = name
         input_channel = org_module.in_features
         output_channel = org_module.out_features
 
+        self.multiplier = multiplier
         self.scale = alpha / lora_dim
 
         self.org_forward = org_module.forward
@@ -54,15 +56,16 @@ class loraLinear(nn.Module):
         org_x = self.org_forward(x)
         down_x = self.down_linear(x)
         up_x = self.up_linear(down_x)
-        return up_x * self.scale + org_x
+        return up_x * self.scale * self.multiplier + org_x
     
     
 class loraModle(nn.Module):
-    def __init__(self, target_model, lora_dim, alpha, *args, **kwargs) -> None:
+    def __init__(self, target_model, lora_dim, alpha, multiplier, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.target_model = target_model
         self.lora_dim = lora_dim
         self.alpha = alpha
+        self.multiplier = multiplier
 
     @staticmethod
     def check_target_module(name:str, target_model:list):
@@ -84,10 +87,10 @@ class loraModle(nn.Module):
             if self.check_target_module(name, self.target_model):
                 self.org_hit_module.append({name:module})
                 if isinstance(module, nn.Conv2d):
-                    Lora_module = loraConv("lora_{}".format(lora_idx), module, self.lora_dim, self.alpha).to(module.weight.device)
+                    Lora_module = loraConv("lora_{}".format(lora_idx), module, self.lora_dim, self.alpha, self.multiplier).to(module.weight.device)
                     lora_idx += 1
                 elif isinstance(module, nn.Linear):
-                    Lora_module = loraLinear("lora_{}".format(lora_idx), module, self.lora_dim, self.alpha).to(module.weight.device)
+                    Lora_module = loraLinear("lora_{}".format(lora_idx), module, self.lora_dim, self.alpha, self.multiplier).to(module.weight.device)
                     lora_idx += 1
 
                 self.lora_module.append({name:Lora_module})
@@ -140,7 +143,7 @@ def main():
     data = torch.randn(1, 3, 8, 8)
     model = testNet()
     print(model)
-    lora = loraModle(["conv1"], 16)
+    lora = loraModle(["conv1"], 16, 16, 1.0)
     model = lora.inject(model)
     print(model)
     print(lora.lora_modules)

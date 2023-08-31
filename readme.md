@@ -36,6 +36,7 @@ model_name = "F:/local_model/dreamshaper_331BakedVae.safetensors"
 # 实例化一个训练器
 trainer = train_lora(model_name,     # 模型名称
                    True,             # 是否进行Lora输入
+                   multiplier = 0.8,    # Lora的贡献比例，训练时默认为1
                    target_module=target_module,   # 如果注入，需要修改的module
                    is_diffusers=False,       # 是否是diffusers模型
                    only_local_files=False)   # 是否只使用diffusers模型
