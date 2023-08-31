@@ -11,10 +11,41 @@
 
 ## 运行
 
+安装运行环境
+
+```shell
+pip install -r requirements.txt
+```
+
 训练以及推理的代码主要在trainLora.py中
+
+```shell
+python trainLora.py
+```
 
 数据放置到自定义路径，数据使用文本图像对的形式（sd-scripts的数据可以直接使用）
 
+```python
+# 设置哪些module参与Lora注入
+target_module = ["to_q", "to_k", "to_v", "conv1", "conv2", "proj_in", "proj_out", "conv", "conv_out", "proj", "ff.net.2"] # 选择注入的模块
+
+# 选择基础模型，目前支持diffusers模型与ldm模型（webui中的checkpoint）
+# model_name = "runwayml/stable-diffusion-v1-5"
+model_name = "F:/local_model/dreamshaper_331BakedVae.safetensors"
+
+# 实例化一个训练器
+trainer = train_lora(model_name,     # 模型名称
+                   True,             # 是否进行Lora输入
+                   target_module=target_module,   # 如果注入，需要修改的module
+                   is_diffusers=False,       # 是否是diffusers模型
+                   only_local_files=False)   # 是否只使用diffusers模型
+
+trainer.train(40, "./data/your_data")    # 训练
+trainer.loraIn.save_lora("./save/lora.pt")  # 持久化
+
+generate_image(4, trainer, "prompt")      # 生成图像
+
+```
 
 ## 效果
 
